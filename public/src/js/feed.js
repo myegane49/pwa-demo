@@ -19,6 +19,14 @@ function openCreatePostModal() {
 
     deferredPrompt = null;
   }
+
+  // if ('serviceWorker' in navigator) {
+  //   navigator.serviceWorker.getRegistrations().then(registrations => {
+  //     for (let i = 0; i < registrations.length; i++) {
+  //       registrations[i].unregister();
+  //     }
+  //   })
+  // }
 }
 
 function closeCreatePostModal() {
@@ -28,6 +36,22 @@ function closeCreatePostModal() {
 shareImageButton.addEventListener('click', openCreatePostModal);
 
 closeCreatePostModalButton.addEventListener('click', closeCreatePostModal);
+
+const onSaveButtonClicked = (event) => {
+  console.log('clicked');
+  if ('caches' in window) {
+    caches.open('user-requested').then(cache => {
+      cache.add('https://httpbin.org/get');
+      cache.add('/src/images/sf-boat.jpg');
+    })
+  }
+};
+
+const clearCards = () => {
+  while(sharedMomentsArea.hasChildNodes()) {
+    sharedMomentsArea.removeChild(sharedMomentsArea.lastChild);
+  }
+}
 
 function createCard() {
   var cardWrapper = document.createElement('div');
@@ -39,6 +63,7 @@ function createCard() {
   cardTitle.style.height = '180px';
   cardWrapper.appendChild(cardTitle);
   var cardTitleTextElement = document.createElement('h2');
+  cardTitleTextElement.style.color = '#fff';
   cardTitleTextElement.className = 'mdl-card__title-text';
   cardTitleTextElement.textContent = 'San Francisco Trip';
   cardTitle.appendChild(cardTitleTextElement);
@@ -46,13 +71,53 @@ function createCard() {
   cardSupportingText.className = 'mdl-card__supporting-text';
   cardSupportingText.textContent = 'In San Francisco';
   cardSupportingText.style.textAlign = 'center';
+  // const cardSaveButton = document.createElement('button');
+  // cardSaveButton.textContent = 'Save';
+  // cardSaveButton.addEventListener('click', onSaveButtonClicked);
+  // cardSupportingText.appendChild(cardSaveButton);
   cardWrapper.appendChild(cardSupportingText);
   componentHandler.upgradeElement(cardWrapper);
   sharedMomentsArea.appendChild(cardWrapper);
 }
 
-fetch('https://httpbin.org/get').then(function(res) {
-    return res.json();
+// const url = 'https://httpbin.org/get';
+const url = 'https://httpbin.org/post';
+let networkDataRecieved = false;
+// fetch(url).then(function(res) {
+//   return res.json();
+// }).then(function(data) {
+//   networkDataRecieved = true;
+//   console.log('From web', data);
+//   clearCards();
+//   createCard();
+// });
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  },
+  body: JSON.stringify({message: 'Some message'}) 
+}).then(function(res) {
+  return res.json();
 }).then(function(data) {
-    createCard();
+  networkDataRecieved = true;
+  console.log('From web', data);
+  clearCards();
+  createCard();
 });
+
+if ('caches' in window) {
+  caches.match(url).then(response => {
+    if (response) {
+      return response.json();
+    }
+  }).then(data => {
+    console.log('From cache', data);
+    if (!networkDataRecieved) {
+      clearCards();
+      createCard();
+    }
+  })
+}
+
