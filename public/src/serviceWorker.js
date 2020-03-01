@@ -1,21 +1,32 @@
-const CACHE_STATIC_NAME = 'static-v15';
+// importScripts('/src/js/idb.js');
+import * as utils from './utility';
+
+const CACHE_STATIC_NAME = 'static-v18';
 const CACHE_DYNAMIC_NAME = 'dynamic-v2';
 const STATIC_FILES = [
     '/',
     '/index.html',
     '/offline.html',
-    '/src/js/app.js',
-    '/src/js/feed.js',
-    '/src/js/promise.js',
-    '/src/js/fetch.js',
-    '/src/js/material.min.js',
-    '/src/css/app.css',
-    '/src/css/feed.css',
-    '/src/images/main-image.jpg',
+    '/index.js',
+    // '/src/js/app.js',
+    // '/src/js/feed.js',
+    // '/src/js/idb.js',
+    // '/src/js/promise.js',
+    // '/src/js/fetch.js',
+    // '/src/js/material.min.js',
+    '/assets/css/app.css',
+    '/assets/css/feed.css',
+    '/assets/images/main-image.jpg',
     'https://fonts.googleapis.com/css?family=Roboto:400,700',
     'https://fonts.googleapis.com/icon?family=Material+Icons',
     'https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css'
 ];
+
+// const dbPromise = idb.openDB('posts-store', 1, (db) => {
+//     if (!db.obejctStoreNames.contains('posts')) {
+//         db.createObjectStore('posts', {keyPath: 'id'});
+//     }
+// });
 
 const trimCache = (cacheName, maxItems) => {
     caches.open(cacheName).then(cache => {
@@ -58,17 +69,28 @@ const isInArray = (string, array) => {
 };
 
 self.addEventListener('fetch', (event) => {
-    const url = 'https://httpbin.org/get';
+    const url = 'https://pwagram-d1bff.firebaseio.com/posts';
     if (event.request.url.indexOf(url) > -1) {
-        event.respondWith(caches.open(CACHE_DYNAMIC_NAME).then(cache => {
-            return fetch(event.request).then(res => {
-                // trimCache(CACHE_DYNAMIC_NAME, 6);
-                cache.put(event.request, res.clone());
-                return res;
-            })
+        // event.respondWith(caches.open(CACHE_DYNAMIC_NAME).then(cache => {
+        //     return fetch(event.request).then(res => {
+        //         // trimCache(CACHE_DYNAMIC_NAME, 6);
+        //         cache.put(event.request, res.clone());
+        //         return res;
+        //     })
+        // }));
+        event.respondWith(fetch(event.request).then(res => {
+            const clonedRes = res.clone();
+            utils.clearAllData('posts').then(() => {
+                return clonedRes.json();
+            }).then(data => {
+                for (let key in data) {
+                    utils.writeData('posts', data[key]);
+                }
+            });
+            return res;
         }));
-    // } else if (new RegExp(`\\b${STATIC_FILES.join('\\b|\\b')}\\b`).test(event.request.url)) {
     } else if (isInArray(event.request.url, STATIC_FILES)) {
+    // } else if (new RegExp(`\\b${STATIC_FILES.join('\\b|\\b')}\\b`).test(event.request.url)) {
         event.respondWith(caches.match(event.request));
     } else {
         event.respondWith(caches.match(event.request).then(response => {
@@ -134,6 +156,6 @@ self.addEventListener('fetch', (event) => {
 // });
 
 // NETWORK ONLY
-self.addEventListener('fetch', (event) => {
-    event.respondWith(fetch(event.request));
-});
+// self.addEventListener('fetch', (event) => {
+//     event.respondWith(fetch(event.request));
+// });

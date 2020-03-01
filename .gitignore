@@ -1,2 +1,4 @@
 .idea
 node_modules
+public/sw.js
+public/index.js

@@ -4,7 +4,9 @@
   "description": "A complete guide to PWAs. Building a simple Instagram clone.",
   "main": "index.js",
   "scripts": {
-    "start": "http-server -c-1"
+    "webpack": "webpack --mode=development --watch",
+    "server": "http-server -c-1",
+    "start": "npm-run-all --parallel webpack server"
   },
   "keywords": [
     "pwa",
@@ -17,6 +19,12 @@
   "author": "Maximilian Schwarzmüller",
   "license": "ISC",
   "devDependencies": {
-    "http-server": "^0.9.0"
+    "http-server": "^0.9.0",
+    "npm-run-all": "^4.1.5",
+    "webpack": "^4.41.6",
+    "webpack-cli": "^3.3.11"
+  },
+  "dependencies": {
+    "idb": "^5.0.1"
   }
 }

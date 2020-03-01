@@ -22,6 +22,7 @@ window.addEventListener('beforeinstallprompt', (event) => {
 
 
 
+
 // FETCH AND PROMISES SECTION:
 
 // const promise = new Promise((resolve, reject) => {
