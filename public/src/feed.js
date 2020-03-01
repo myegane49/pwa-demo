@@ -1,4 +1,5 @@
 import * as utils from './utility';
+import deferredPrompt from './app';
 
 var shareImageButton = document.querySelector('#share-image-button');
 var createPostArea = document.querySelector('#create-post');
@@ -7,6 +8,9 @@ var sharedMomentsArea = document.querySelector('#shared-moments');
 
 function openCreatePostModal() {
   createPostArea.style.display = 'block';
+  setTimeout(() => {
+    createPostArea.style.transform = 'translateY(0)';
+  }, 1);
   if (deferredPrompt) {
     deferredPrompt.prompt();
 
@@ -32,7 +36,10 @@ function openCreatePostModal() {
 }
 
 function closeCreatePostModal() {
-  createPostArea.style.display = 'none';
+  createPostArea.style.transform = 'translateY(100vh)';
+  setTimeout(() => {
+    createPostArea.style.display = 'none';
+  }, 300);
 }
 
 shareImageButton.addEventListener('click', openCreatePostModal);
@@ -62,7 +69,6 @@ function createCard(data) {
   cardTitle.className = 'mdl-card__title';
   cardTitle.style.backgroundImage = `url('${data.image}')`;
   cardTitle.style.backgroundSize = 'cover';
-  cardTitle.style.height = '180px';
   cardWrapper.appendChild(cardTitle);
   var cardTitleTextElement = document.createElement('h2');
   cardTitleTextElement.style.color = '#fff';

@@ -1,4 +1,4 @@
-let deferredPrompt; 
+export let deferredPrompt; 
 
 if (!window.Promise) {
     window.Promise = Promise;
