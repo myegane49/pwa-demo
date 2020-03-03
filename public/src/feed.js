@@ -5,6 +5,9 @@ var shareImageButton = document.querySelector('#share-image-button');
 var createPostArea = document.querySelector('#create-post');
 var closeCreatePostModalButton = document.querySelector('#close-create-post-modal-btn');
 var sharedMomentsArea = document.querySelector('#shared-moments');
+const form = document.querySelector('form');
+const titleInput = document.getElementById('title');
+const locationInput = document.getElementById('location');
 
 function openCreatePostModal() {
   createPostArea.style.display = 'block';
@@ -143,3 +146,53 @@ if ('indexedDB' in window) {
   });
 }
 
+const sendData = () => {
+  fetch('https://us-central1-pwagram-d1bff.cloudfunctions.net/storePostData', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify({
+      id: new Date().toISOString(),
+      title: titleInput.value,
+      location: locationInput.value,
+      image: 'https://firebasestorage.googleapis.com/v0/b/pwagram-d1bff.appspot.com/o/sf-boat.jpg?alt=media&token=d93053a6-ed1d-4a2f-9ba7-72680198392d'
+    })
+  }).then(res => {
+    console.log('Sent data', res);
+    updateUI();
+  });
+};
+
+form.addEventListener('submit', (event) => {
+  event.preventDefault();
+
+  if (titleInput.value.trim() === '' || locationInput.value.trim() === '') {
+    alert('Please enter valid data!');
+    return;
+  }
+
+  closeCreatePostModal();
+
+  if ('serviceWorker' in navigator && 'SyncManager' in window) {
+    navigator.serviceWorker.ready.then(sw => {
+      const post = {
+        id: new Date().toISOString(),
+        title: titleInput.value,
+        location: locationInput.value
+      };
+      utils.writeData('sync-posts', post).then(() => {
+        return sw.sync.register('sync-new-posts');
+      }).then(() => {
+        const snackbarContainer = document.getElementById('confirmation-toast');
+        const data = {message: 'Your post was saved for syncing'};
+        snackbarContainer.MaterialSnackbar.showSnackbar(data);
+      }).catch(err => {
+        console.log(err);
+      });
+    });
+  } else {
+    sendData();
+  }
+});
