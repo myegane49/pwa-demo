@@ -116,39 +116,6 @@ self.addEventListener('fetch', (event) => {
     }
 });
 
-self.addEventListener('sync', (event) => {
-    console.log('[ServiceWorker] background syncing', event);
-    if (event.tag === 'sync-new-posts') {
-        console.log('ServiceWorker] syncing new post');
-        event.waitUntil(utils.readAllData('sync-posts').then(data => {
-            for (let dt of data) {
-                fetch('https://us-central1-pwagram-d1bff.cloudfunctions.net/storePostData', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        id: dt.id,
-                        title: dt.title,
-                        location: dt.location,
-                        image: 'https://firebasestorage.googleapis.com/v0/b/pwagram-d1bff.appspot.com/o/sf-boat.jpg?alt=media&token=d93053a6-ed1d-4a2f-9ba7-72680198392d'
-                    })
-                }).then(res => {
-                    console.log('Sent data', res);
-                    if (res.ok) {
-                        res.json().then(resData => {
-                            utils.deleteItemFromData('sync-posts', resData.id);
-                        });
-                    }
-                }).catch(err => {
-                    console.log('Error while sending data', err);
-                });
-            }
-        }));
-    }
-});
-
 // CACHE WITH NETWORK FALLBACK
 // self.addEventListener('fetch', (event) => {
 //     // event.respondWith(null); // with this the app won't load
@@ -192,3 +159,87 @@ self.addEventListener('sync', (event) => {
 // self.addEventListener('fetch', (event) => {
 //     event.respondWith(fetch(event.request));
 // });
+
+self.addEventListener('sync', (event) => {
+    console.log('[ServiceWorker] background syncing', event);
+    if (event.tag === 'sync-new-posts') {
+        console.log('ServiceWorker] syncing new post');
+        event.waitUntil(utils.readAllData('sync-posts').then(data => {
+            for (let dt of data) {
+                fetch('https://us-central1-pwagram-d1bff.cloudfunctions.net/storePostData', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: dt.id,
+                        title: dt.title,
+                        location: dt.location,
+                        image: 'https://firebasestorage.googleapis.com/v0/b/pwagram-d1bff.appspot.com/o/sf-boat.jpg?alt=media&token=d93053a6-ed1d-4a2f-9ba7-72680198392d'
+                    })
+                }).then(res => {
+                    console.log('Sent data', res);
+                    if (res.ok) {
+                        res.json().then(resData => {
+                            utils.deleteItemFromData('sync-posts', resData.id);
+                        });
+                    }
+                }).catch(err => {
+                    console.log('Error while sending data', err);
+                });
+            }
+        }));
+    }
+});
+
+self.addEventListener('notificationclick', event => {
+    const notification = event.notification;
+    const action = event.action;
+
+    console.log(notification);
+
+    if (action === 'confirm') {
+        console.log('Confirm was chosen');
+        notification.close();
+    } else {
+        console.log(action);
+        event.waitUntil(clients.matchAll().then(clis => {
+            const client = clis.find(c => {
+                return c.visibilityState === 'visible';
+            });
+
+            if (client !== undefined) {
+                client.navigate(notification.data.url);
+                client.focus();
+            } else {
+                clients.openWindow(notification.data.url);
+            }
+            notification.close();
+        }));
+    }
+});
+
+self.addEventListener('notificationclose', event => {
+    console.log('Notification was closed', event);
+});
+
+self.addEventListener('push', (event) => {
+    console.log('Push notification received', event);
+
+    let data = {title: 'New!', content: 'Something new happened', openUrl: '/'};
+    if (event.data) {
+        data = JSON.parse(event.data.text());
+    }
+
+    const options = {
+        body: data.content,
+        icon: '/assets/images/icons/app-icon-96x96.png',
+        badge: '/assets/images/icons/app-icon-96x96.png',
+        data: {
+            url: data.openUrl
+        }
+    };
+    event.waitUntil(self.registration.showNotification(data.title, options));
+    
+});
